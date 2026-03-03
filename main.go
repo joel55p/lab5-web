@@ -94,9 +94,9 @@ func handle(conn net.Conn, db *sql.DB) {
 	case method == "GET" && path == "/":
 		response = handleIndex( db) //se llama a la función handleIndex para manejar la solicitud GET al path "/". Esta función se encargará de construir la respuesta HTML con la tabla de series desde la base de datos y devolverla al cliente.
 	case method == "GET" && path == "/create":
-		response = handleCreate(body, db) //se llama a la función handleCreate para manejar la solicitud GET al path "/create". Esta función aún no está implementada, pero se espera que maneje la lógica para agregar una nueva serie a la base de datos y devolver una respuesta adecuada al cliente.
+		response = handleCreate() //se llama a la función handleCreate para manejar la solicitud GET al path "/create". Esta función aún no está implementada, pero se espera que maneje la lógica para agregar una nueva serie a la base de datos y devolver una respuesta adecuada al cliente.
 	case method == "POST" && path == "/create":
-		response = handleCreatePost(body) //se llama a la función handleCreatePost para manejar la solicitud POST al path "/create". Esta función aún no está implementada, pero se espera que maneje la lógica para procesar los datos enviados desde el formulario de creación de una nueva serie, agregar esa serie a la base de datos y devolver una respuesta adecuada al cliente.
+		response = handleCreatePost(body, db) //se llama a la función handleCreatePost para manejar la solicitud POST al path "/create". Esta función aún no está implementada, pero se espera que maneje la lógica para procesar los datos enviados desde el formulario de creación de una nueva serie, agregar esa serie a la base de datos y devolver una respuesta adecuada al cliente.
 	default:
 		response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n<h1>404 Not Found</h1>" //si la solicitud no coincide con ninguna de las rutas definidas, se devuelve una respuesta HTTP con el código de estado 404 Not Found y un mensaje HTML indicando que la página no fue encontrada.
 	}
@@ -177,7 +177,7 @@ func handleIndex( db *sql.DB) string {
 
 
 
-func handleCreate(body string, db *sql.DB) string {
+func handleCreate() string {
 
 	var html string
 
@@ -198,13 +198,13 @@ func handleCreate(body string, db *sql.DB) string {
 <h1>Agregar Serie</h1>
 <form method="POST" action="/create">
 	<label for="name">Nombre de la serie:</label>
-	<input type="text" id="name" name="name" required>
+	<input type="text" id="name" name="series_name" required>
 
 	<label for="currentEpisode">Episodio actual:</label>
-	<input type="number" id="currentEpisode" name="currentEpisode" min="1" value="1" required>
+	<input type="number" id="currentEpisode" name="current_episode" min="1" value="1" required>
 
 	<label for="totalEpisodes">Total de episodios:</label>
-	<input type="number" id="totalEpisodes" name="totalEpisodes" min="1"  required>
+	<input type="number" id="totalEpisodes" name="total_episodes" min="1"  required>
 
 	<input type="submit" value="Agregar Serie">
 </form>
@@ -213,31 +213,40 @@ func handleCreate(body string, db *sql.DB) string {
 </body>
 </html>`
 
+	return fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n%s", html) //se devuelve la respuesta HTTP con el código de estado 200 OK, el encabezado Content-Type indicando que el contenido es HTML, y luego el cuerpo de la respuesta que contiene el formulario HTML para agregar una nueva serie.
 
-    values, err := url.ParseQuery(body)
-    if err != nil {
-        fmt.Println("Error parseando body:", err)
-        return "HTTP/1.1 400 Bad Request\r\n\r\n"
-    }
-
-    name := values.Get("series_name")
-    currentEp := values.Get("current_episode")
-    totalEps := values.Get("total_episodes")
-
-    fmt.Println("Nombre:", name)
-    fmt.Println("Episodio actual:", currentEp)
-    fmt.Println("Total episodios:", totalEps)
-
-    return fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n%s", html)
+    
 
 }
 
 
 
 
-func handleCreatePost(body string) string {
+func handleCreatePost(body string, db *sql.DB) string {
 
-	fmt.Println("Body recibido:", body)
-	return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<h1>Recibido</h1>"
+	values, err := url.ParseQuery(body)
+    if err != nil {
+        fmt.Println("Error parseando body:", err)
+        return "HTTP/1.1 400 Bad Request\r\n\r\n"
+    }
+
+	name := values.Get("series_name")
+	currentEp, _ := strconv.Atoi(values.Get("current_episode"))
+	totalEps, _ := strconv.Atoi(values.Get("total_episodes"))
+	
+    fmt.Println("Nombre:", name)
+    fmt.Println("Episodio actual:", currentEp)
+    fmt.Println("Total episodios:", totalEps)
+
+
+
+	_, err = db.Exec("INSERT INTO series (name, current_episode, total_episodes) VALUES (?, ?, ?)", name, currentEp, totalEps)
+    if err != nil {
+        fmt.Println("Error insertando serie:", err)
+        return "HTTP/1.1 500 Internal Server Error\r\n\r\n"
+    }
+
+    // Redirigir al index
+    return "HTTP/1.1 303 See Other\r\nLocation: /\r\n\r\n"
 
 }

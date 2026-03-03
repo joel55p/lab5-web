@@ -51,9 +51,14 @@ func handle(conn net.Conn, db *sql.DB) {
 
 	parts := strings.Fields(requestLine)
 	path := "/"
-	if len(parts) >= 2 {
-		path = parts[1]
+	method := "GET"
+	if len(parts) >= 2 { 
+		path = parts[1] //se obtiene el path solicitado, que es la segunda parte de la request line (después del método HTTP).
+		method = parts[0] //se obtiene el metodo http, que es la primera parte de la request line (antes del path).
+		
 	}
+	
+
 
 	// Consumir headers hasta línea vacía
 	for {
@@ -63,75 +68,86 @@ func handle(conn net.Conn, db *sql.DB) {
 		}
 	}
 
-	// Construir la tabla HTML desde la base de datos
-	var html string //se define una variable donde se colocara el html
 
-	if path == "/" { //se empieza con /
-		rows, err := db.Query("SELECT * FROM series") //se selecciona eso de mi base de datos
-		if err != nil {
-			log.Print("Error querying database:", err) //error
-			return
-		}
-		defer rows.Close() //para cerrar la consulta a  la base de datos
+		// ---Routing---
+	var response string
 
-		// Inicio del HTML con estilos
-		html = `<html> 
-<head>
-    <title>Track de mis series actuales</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        h1   { color: #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-        th { background-color: #f4f4f4; }
-    </style>
-</head>
-<body>
-    <h1>Track de mis series actuales</h1>
-    <table>
-        <tr><th>No.</th><th>Nombre</th><th>Episodio actual</th><th>Total de episodios</th></tr>
+	switch{
+	case method == "GET" && path == "/":
+		response = handleIndex( db) //se llama a la función handleIndex para manejar la solicitud GET al path "/". Esta función se encargará de construir la respuesta HTML con la tabla de series desde la base de datos y devolverla al cliente.
+
 		
-	<script>
 
-    alert("Cuidado estas a punto de ver las mejores pinches series de la historia");
-  	</script>`
-	
-
-		// Iterar sobre cada fila de la base de datos para que se construya la tabla en el html
-		for rows.Next() { //next justamente hace eso como un puntero que avanza y se detiene cuando ya no hay más filas, entonces el for se ejecuta mientras haya filas para procesar. cada vez que se llama a rows.Next(), se mueve al siguiente registro en el conjunto de resultados de la consulta. Si hay un registro disponible, devuelve true y permite que el bloque de código dentro del for se ejecute para procesar ese registro. Si no hay más registros disponibles, devuelve false y el bucle termina.
-			var id, currentEpisode, totalEpisodes int
-			var name string
-
-			// Scan guarda los valores de la fila actual en las variables
-			err := rows.Scan(&id, &name, &currentEpisode, &totalEpisodes)
-			if err != nil {
-				log.Print("Error scanning row:", err)
-				continue
-			}
-
-			// Agregar una fila a la tabla por cada serie
-			html += fmt.Sprintf(
-				"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td></tr>",
-				id, name, currentEpisode, totalEpisodes,
-			)
-		}
-
-		html += `</table></body></html>` //cierre del html
-
-	} else {
-		html = "<html><body><h1>404 - Página no encontrada</h1></body></html>"
 	}
 
-	// Construir y enviar la respuesta HTTP
-	response := fmt.Sprintf(
-		"HTTP/1.1 200 OK\r\n"+ //la primera línea de la respuesta HTTP, que indica el protocolo (HTTP/1.1), el código de estado (200) y el mensaje de estado (OK). Esto le dice al cliente que la solicitud fue exitosa y que se está enviando una respuesta con contenido.
-			"Content-Type: text/html\r\n"+ //el encabezado "Content-Type" indica al cliente que el contenido de la respuesta es HTML, lo que le permite al navegador interpretar correctamente el contenido y mostrarlo como una página web.
-			"Content-Length: %d\r\n"+ //el encabezado "Content-Length" especifica la longitud del cuerpo de la respuesta en bytes. Esto es importante para que el cliente sepa cuánto contenido esperar y pueda manejarlo adecuadamente.
-			"Connection: close\r\n"+ //el encabezado "Connection: close" indica al cliente que el servidor cerrará la conexión después de enviar la respuesta. Esto es útil para liberar recursos en el servidor y evitar conexiones persistentes innecesarias, especialmente en un servidor simple como este.
-			"\r\n"+//la línea en blanco después de los encabezados indica el final de los encabezados HTTP y el comienzo del cuerpo de la respuesta. Es un requisito en el formato HTTP para separar los encabezados del contenido.
-			"%s", //el cuerpo(html)
-		len(html), html, //valores para el formato, primero el largo del html para el header Content-Length, y luego el html mismo para el cuerpo de la respuesta.
-	)
-
-	conn.Write([]byte(response)) //se escribe la respuesta al cliente. "conn.Write" envía los bytes de la respuesta HTTP al cliente que hizo la solicitud. La respuesta incluye el código de estado, los encabezados y el cuerpo HTML que se construyó a partir de la base de datos.
+	conn.Write([]byte(response))  // handle() escribe
 }
+
+	
+
+	
+
+	
+		
+	
+func handleIndex( db *sql.DB) string {
+		// Construir la tabla HTML desde la base de datos
+	var html string //se define una variable donde se colocara el html
+
+	rows, err := db.Query("SELECT * FROM series") //se selecciona eso de mi base de datos
+	if err != nil {
+		log.Print("Error querying database:", err) //error
+
+	}
+	defer rows.Close() //para cerrar la consulta a  la base de datos
+
+	// Inicio del HTML con estilos
+	html = `<html> 
+<head>
+<title>Track de mis series actuales</title>
+<style>
+	body { font-family: Arial, sans-serif; padding: 20px; }
+	h1   { color: #333; }
+	table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+	th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+	th { background-color: #f4f4f4; }
+</style>
+</head>
+<body>
+<h1>Track de mis series actuales</h1>
+<table>
+	<tr><th>No.</th><th>Nombre</th><th>Episodio actual</th><th>Total de episodios</th></tr>
+		
+<script>
+
+alert("Cuidado estas a punto de ver las mejores pinches series de la historia");
+</script>`
+
+
+		// Iterar sobre cada fila de la base de datos para que se construya la tabla en el html
+	for rows.Next() { //next justamente hace eso como un puntero que avanza y se detiene cuando ya no hay más filas, entonces el for se ejecuta mientras haya filas para procesar. cada vez que se llama a rows.Next(), se mueve al siguiente registro en el conjunto de resultados de la consulta. Si hay un registro disponible, devuelve true y permite que el bloque de código dentro del for se ejecute para procesar ese registro. Si no hay más registros disponibles, devuelve false y el bucle termina.
+		var id, currentEpisode, totalEpisodes int
+		var name string
+
+		// Scan guarda los valores de la fila actual en las variables
+		err := rows.Scan(&id, &name, &currentEpisode, &totalEpisodes)
+		if err != nil {
+			log.Print("Error scanning row:", err)
+			continue
+		}
+
+			// Agregar una fila a la tabla por cada serie
+		html += fmt.Sprintf(
+			"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td></tr>",
+			id, name, currentEpisode, totalEpisodes,
+		)
+	}
+
+	html += `</table></body></html>` //cierre del html
+
+
+		// Enviar respuesta HTTP
+	return fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n%s", html) //se devuelve la respuesta HTTP con el código de estado 200 OK, el encabezado Content-Type indicando que el contenido es HTML, y luego el cuerpo de la respuesta que contiene el HTML construido con la tabla de series.
+	//se hace return de tipo string porque la función handleIndex está definida para devolver un string, que es la respuesta HTTP completa que se enviará al cliente. El formato de la respuesta incluye el código de estado, los encabezados y el cuerpo HTML.
+}
+	

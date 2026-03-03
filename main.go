@@ -58,6 +58,14 @@ func handle(conn net.Conn, db *sql.DB) {
 		method = parts[0] //se obtiene el metodo http, que es la primera parte de la request line (antes del path).
 		
 	}
+
+
+	routeParts := strings.SplitN(path, "?", 2) //El SplitN separa /update?id=3 en dos partes: route = "/update" y queryParams = "id=3". Por eso el switch necesita usar route para comparar con "/update" y no con "/update?id=3", porque el path completo incluye los parámetros de consulta, pero el route es solo la parte del path sin los parámetros. Esto permite que el switch maneje la ruta correctamente sin preocuparse por los parámetros de consulta que pueden variar.
+	route := routeParts[0]
+	queryParams := ""
+	if len(routeParts) > 1 {
+		queryParams = routeParts[1]
+	}
 	
 
 
@@ -91,12 +99,17 @@ func handle(conn net.Conn, db *sql.DB) {
 	var response string
 
 	switch{
-	case method == "GET" && path == "/":
+	case method == "GET" && route == "/":
 		response = handleIndex( db) //se llama a la función handleIndex para manejar la solicitud GET al path "/". Esta función se encargará de construir la respuesta HTML con la tabla de series desde la base de datos y devolverla al cliente.
-	case method == "GET" && path == "/create":
+	case method == "GET" && route == "/create":
 		response = handleCreate() //se llama a la función handleCreate para manejar la solicitud GET al path "/create". Esta función aún no está implementada, pero se espera que maneje la lógica para agregar una nueva serie a la base de datos y devolver una respuesta adecuada al cliente.
-	case method == "POST" && path == "/create":
+	case method == "POST" && route == "/create":
 		response = handleCreatePost(body, db) //se llama a la función handleCreatePost para manejar la solicitud POST al path "/create". Esta función aún no está implementada, pero se espera que maneje la lógica para procesar los datos enviados desde el formulario de creación de una nueva serie, agregar esa serie a la base de datos y devolver una respuesta adecuada al cliente.
+	
+	case method == "POST" && route == "/update":
+		params, _ := url.ParseQuery(queryParams) // convierte "id=3" en un mapa {id: "3"}
+		id := params.Get("id")// lo que hace esto es que extrae el valor "3"
+		response = handleUpdate(db, id) //da el response
 	default:
 		response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n<h1>404 Not Found</h1>" //si la solicitud no coincide con ninguna de las rutas definidas, se devuelve una respuesta HTTP con el código de estado 404 Not Found y un mensaje HTML indicando que la página no fue encontrada.
 	}
@@ -137,9 +150,16 @@ func handleIndex( db *sql.DB) string {
 <body>
 <h1>Track de mis series actuales</h1>
 <table>
-	<tr><th>No.</th><th>Nombre</th><th>Episodio actual</th><th>Total de episodios</th></tr>
-		
+	<tr><th>No.</th><th>Nombre</th><th>Episodio actual</th><th>Total de episodios</th><th>Agregar a episodio actual</th></tr>
 <a href="/create" target="_blank">Agregar Serie</a>
+
+<script>
+async function nextEpisode(id) {
+    const url = '/update?id=' + id;
+    const response = await fetch(url, { method: "POST" })
+    location.reload()
+}
+</script>
 
 
 
@@ -158,10 +178,10 @@ func handleIndex( db *sql.DB) string {
 			continue
 		}
 
-			// Agregar una fila a la tabla por cada serie
-		html += fmt.Sprintf(
-			"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td></tr>",
-			id, name, currentEpisode, totalEpisodes,
+			// Agregar una fila a la tabla por cada serie y se agrega ahora boton
+		html += fmt.Sprintf( //aqui se coloca el boton ya que se necesita el id de cada serie para que el boton funcione, entonces se hace dentro del for para que se agregue un boton por cada serie en la tabla, y cada boton tenga el id de su respectiva serie para que al hacer click en el boton se pueda identificar a qué serie se le debe actualizar el episodio actual.
+			"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td><td><button onclick='nextEpisode(%d)'>+1</button></td></tr>",
+		id, name, currentEpisode, totalEpisodes, id,
 		)
 	}
 
@@ -233,7 +253,7 @@ func handleCreatePost(body string, db *sql.DB) string {
 	name := values.Get("series_name")
 	currentEp, _ := strconv.Atoi(values.Get("current_episode"))
 	totalEps, _ := strconv.Atoi(values.Get("total_episodes"))
-	
+
     fmt.Println("Nombre:", name)
     fmt.Println("Episodio actual:", currentEp)
     fmt.Println("Total episodios:", totalEps)
@@ -249,4 +269,17 @@ func handleCreatePost(body string, db *sql.DB) string {
     // Redirigir al index
     return "HTTP/1.1 303 See Other\r\nLocation: /\r\n\r\n"
 
+}
+
+
+func handleUpdate(db *sql.DB, id string) string { //para actualizar el episodio actual de una serie  espeecifica por eso es que se le pasa como parametro el id
+    _, err := db.Exec(
+        "UPDATE series SET current_episode = current_episode + 1 WHERE id = ? AND current_episode < total_episodes",
+        id,
+    )
+    if err != nil {
+        fmt.Println("Error actualizando:", err)
+        return "HTTP/1.1 500 Internal Server Error\r\n\r\n"
+    }
+    return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nok"
 }

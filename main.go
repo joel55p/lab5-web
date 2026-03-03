@@ -75,7 +75,8 @@ func handle(conn net.Conn, db *sql.DB) {
 	switch{
 	case method == "GET" && path == "/":
 		response = handleIndex( db) //se llama a la función handleIndex para manejar la solicitud GET al path "/". Esta función se encargará de construir la respuesta HTML con la tabla de series desde la base de datos y devolverla al cliente.
-
+	case method == "GET" && path == "/create":
+		response = handleCreate() //se llama a la función handleCreate para manejar la solicitud GET al path "/create". Esta función aún no está implementada, pero se espera que maneje la lógica para agregar una nueva serie a la base de datos y devolver una respuesta adecuada al cliente.
 		
 
 	}
@@ -118,10 +119,11 @@ func handleIndex( db *sql.DB) string {
 <table>
 	<tr><th>No.</th><th>Nombre</th><th>Episodio actual</th><th>Total de episodios</th></tr>
 		
-<script>
+<a href="/create" target="_blank">Agregar Serie</a>
 
-alert("Cuidado estas a punto de ver las mejores pinches series de la historia");
-</script>`
+
+
+`
 
 
 		// Iterar sobre cada fila de la base de datos para que se construya la tabla en el html
@@ -151,3 +153,45 @@ alert("Cuidado estas a punto de ver las mejores pinches series de la historia");
 	//se hace return de tipo string porque la función handleIndex está definida para devolver un string, que es la respuesta HTTP completa que se enviará al cliente. El formato de la respuesta incluye el código de estado, los encabezados y el cuerpo HTML.
 }
 	
+
+
+
+
+func handleCreate() string {
+
+	var html string
+
+	html = `<html>
+<head>
+<title>Agregar Serie</title>
+<style>
+	body { font-family: Arial, sans-serif; padding: 20px; }
+	h1   { color: #333; }
+	form { margin-top: 20px; }
+	label { display: block; margin-bottom: 5px; }
+	input[type="text"], input[type="number"] { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+	input[type="submit"] { background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+	input[type="submit"]:hover { background-color: #45a049; }
+</style>
+</head>
+<body>
+<h1>Agregar Serie</h1>
+<form method="POST" action="/create">
+	<label for="name">Nombre de la serie:</label>
+	<input type="text" id="name" name="name" required>
+
+	<label for="currentEpisode">Episodio actual:</label>
+	<input type="number" id="currentEpisode" name="currentEpisode" min="1" value="1" required>
+
+	<label for="totalEpisodes">Total de episodios:</label>
+	<input type="number" id="totalEpisodes" name="totalEpisodes" min="1"  required>
+
+	<input type="submit" value="Agregar Serie">
+</form>
+
+<a href="/" target="_blank">Volver al Track de Series</a>
+</body>
+</html>`
+
+	return fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n%s", html)
+}

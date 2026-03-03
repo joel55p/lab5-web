@@ -7,7 +7,8 @@ import ( // Este es un servidor HTTP básico en Go que escucha en el puerto 8080
 	"log"          // "log" se utiliza para registrar errores y mensajes informativos en la consola.
 	"net"          // "net" se utiliza para crear un servidor TCP que escuche en el puerto 8080 y acepte conexiones entrantes. uno de os paquetes más importantes para la comunicación de red en Go.
 	"strings"      // "strings" se utiliza para manipular la cadena de texto de la solicitud HTTP, como extraer el path solicitado.
-
+	"net/url"
+	"strconv"
 	_ "modernc.org/sqlite" // Este es un import anónimo que se utiliza para registrar el controlador de SQLite con el paquete "database/sql". Esto permite que el programa utilice SQLite como base de datos sin necesidad de importar explícitamente el paquete en el código. El guion bajo (_) indica que el paquete se importa solo por sus efectos secundarios, es decir, para registrar el controlador de la base de datos, sin utilizar directamente ninguna función o tipo del paquete en el código.
 )
 
@@ -60,13 +61,30 @@ func handle(conn net.Conn, db *sql.DB) {
 	
 
 
-	// Consumir headers hasta línea vacía
+	contentLength := 0
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil || line == "\r\n" {
 			break
 		}
+		if strings.HasPrefix(line, "Content-Length:") {
+			lengthStr := strings.TrimSpace(strings.TrimPrefix(line, "Content-Length:"))
+			contentLength, _ = strconv.Atoi(lengthStr)
+		}
 	}
+
+	// Leer body
+	body := ""
+	if contentLength > 0 {
+		bodyBytes := make([]byte, contentLength)
+		reader.Read(bodyBytes)
+		body = string(bodyBytes)
+	}
+
+
+
+
+
 
 
 		// ---Routing---
@@ -76,9 +94,11 @@ func handle(conn net.Conn, db *sql.DB) {
 	case method == "GET" && path == "/":
 		response = handleIndex( db) //se llama a la función handleIndex para manejar la solicitud GET al path "/". Esta función se encargará de construir la respuesta HTML con la tabla de series desde la base de datos y devolverla al cliente.
 	case method == "GET" && path == "/create":
-		response = handleCreate() //se llama a la función handleCreate para manejar la solicitud GET al path "/create". Esta función aún no está implementada, pero se espera que maneje la lógica para agregar una nueva serie a la base de datos y devolver una respuesta adecuada al cliente.
-		
-
+		response = handleCreate(body, db) //se llama a la función handleCreate para manejar la solicitud GET al path "/create". Esta función aún no está implementada, pero se espera que maneje la lógica para agregar una nueva serie a la base de datos y devolver una respuesta adecuada al cliente.
+	case method == "POST" && path == "/create":
+		response = handleCreatePost(body) //se llama a la función handleCreatePost para manejar la solicitud POST al path "/create". Esta función aún no está implementada, pero se espera que maneje la lógica para procesar los datos enviados desde el formulario de creación de una nueva serie, agregar esa serie a la base de datos y devolver una respuesta adecuada al cliente.
+	default:
+		response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n<h1>404 Not Found</h1>" //si la solicitud no coincide con ninguna de las rutas definidas, se devuelve una respuesta HTTP con el código de estado 404 Not Found y un mensaje HTML indicando que la página no fue encontrada.
 	}
 
 	conn.Write([]byte(response))  // handle() escribe
@@ -157,7 +177,7 @@ func handleIndex( db *sql.DB) string {
 
 
 
-func handleCreate() string {
+func handleCreate(body string, db *sql.DB) string {
 
 	var html string
 
@@ -193,5 +213,31 @@ func handleCreate() string {
 </body>
 </html>`
 
-	return fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n%s", html)
+
+    values, err := url.ParseQuery(body)
+    if err != nil {
+        fmt.Println("Error parseando body:", err)
+        return "HTTP/1.1 400 Bad Request\r\n\r\n"
+    }
+
+    name := values.Get("series_name")
+    currentEp := values.Get("current_episode")
+    totalEps := values.Get("total_episodes")
+
+    fmt.Println("Nombre:", name)
+    fmt.Println("Episodio actual:", currentEp)
+    fmt.Println("Total episodios:", totalEps)
+
+    return fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n%s", html)
+
+}
+
+
+
+
+func handleCreatePost(body string) string {
+
+	fmt.Println("Body recibido:", body)
+	return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<h1>Recibido</h1>"
+
 }

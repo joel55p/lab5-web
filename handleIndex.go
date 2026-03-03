@@ -38,13 +38,7 @@ func handleIndex( db *sql.DB) string {
 	<tr><th>No.</th><th>Nombre</th><th>Episodio actual</th><th>Total de episodios</th><th>Agregar a episodio actual</th></tr>
 <a href="/create" target="_blank">Agregar Serie</a>
 
-<script>
-async function nextEpisode(id) {
-    const url = '/update?id=' + id;
-    const response = await fetch(url, { method: "POST" })
-    location.reload()
-}
-</script>
+<script src="/script.js"></script>
 
 
 

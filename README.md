@@ -1,0 +1,1 @@
+para correrlo es ahora con  "go run ." desde terminal 

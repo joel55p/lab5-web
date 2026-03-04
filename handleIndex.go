@@ -44,6 +44,7 @@ func handleIndex( db *sql.DB) string {
     <th>Progreso</th>
     <th>Agregar episodio</th>
     <th>Quitar episodio</th>
+	<th>Eliminar serie</th>
 </tr>
 <a href="/create" target="_blank">Agregar Serie</a>
 
@@ -73,8 +74,8 @@ func handleIndex( db *sql.DB) string {
 		}
 
 		html += fmt.Sprintf(
-			"<tr><td>%d</td><td>%s %s</td><td>%d</td><td>%d</td><td><progress value='%d' max='%d'></progress> %d/%d</td><td><button onclick='nextEpisode(%d)'>+1</button></td><td><button onclick='prevEpisode(%d)'>-1</button></td></tr>",
-			id, name, completada, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, id, id,
+    		"<tr><td>%d</td><td>%s %s</td><td>%d</td><td>%d</td><td><progress value='%d' max='%d'></progress> %d/%d</td><td><button onclick='nextEpisode(%d)'>+1</button></td><td><button onclick='prevEpisode(%d)'>-1</button></td><td><button onclick='deleteSerie(%d)'>Eliminar</button></td></tr>",
+    		id, name, completada, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, id, id, id,
 		)
 
 	}

@@ -9,3 +9,9 @@ async function prevEpisode(id) {
     await fetch(url, { method: "POST" })
     location.reload()
 }
+
+async function deleteSerie(id) {
+    const url = '/delete?id=' + id;
+    await fetch(url, { method: "DELETE" })
+    location.reload()
+}

@@ -64,17 +64,24 @@ func handleIndex( db *sql.DB) string {
 `
 
 
-		// Iterar sobre cada fila de la base de datos para que se construya la tabla en el html
-	for rows.Next() { //next justamente hace eso como un puntero que avanza y se detiene cuando ya no hay más filas, entonces el for se ejecuta mientras haya filas para procesar. cada vez que se llama a rows.Next(), se mueve al siguiente registro en el conjunto de resultados de la consulta. Si hay un registro disponible, devuelve true y permite que el bloque de código dentro del for se ejecute para procesar ese registro. Si no hay más registros disponibles, devuelve false y el bucle termina.
+
+
+
+
+
+contador := 0
+
+	for rows.Next() {
 		var id, currentEpisode, totalEpisodes int
 		var name string
 
-		// Scan guarda los valores de la fila actual en las variables
 		err := rows.Scan(&id, &name, &currentEpisode, &totalEpisodes)
 		if err != nil {
-			log.Print("Error scanning row:", err)
+			log.Print("Error  al intentar escanear fila:", err)
 			continue
 		}
+    
+    	contador++ // incrementa por cada fila
 
 		// Marcar serie como completada si ya se vieron todos los episodios
 		completada := ""
@@ -84,7 +91,7 @@ func handleIndex( db *sql.DB) string {
 
 		html += fmt.Sprintf(
 			"<tr><td>%d</td><td>%s %s</td><td>%d</td><td>%d</td><td><progress value='%d' max='%d'></progress> %d/%d</td><td><button class='btn-add' onclick='nextEpisode(%d)'>+1</button></td><td><button class='btn-sub' onclick='prevEpisode(%d)'>-1</button></td><td><button class='btn-del' onclick='deleteSerie(%d)'>Eliminar</button></td></tr>",
-			id, name, completada, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, id, id, id,
+			contador, name, completada, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, id, id, id,
 		)
 
 	}

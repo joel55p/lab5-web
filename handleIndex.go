@@ -37,12 +37,14 @@ func handleIndex( db *sql.DB) string {
 <h1>Track de mis series actuales</h1>
 <table>
 	<tr>
-	<th>No.</th>
-	<th>Nombre</th>
-	<th>Episodio actual</th>
-	<th>Total de episodios</th>
-	<th>Progreso</th>
-	<th>Agregar a episodio actual</th></tr>
+    <th>No.</th>
+    <th>Nombre</th>
+    <th>Episodio actual</th>
+    <th>Total de episodios</th>
+    <th>Progreso</th>
+    <th>Agregar episodio</th>
+    <th>Quitar episodio</th>
+</tr>
 <a href="/create" target="_blank">Agregar Serie</a>
 
 <script src="/script.js"></script>
@@ -71,8 +73,8 @@ func handleIndex( db *sql.DB) string {
 		}
 
 		html += fmt.Sprintf(
-			"<tr><td>%d</td><td>%s %s</td><td>%d</td><td>%d</td><td><progress value='%d' max='%d'></progress> %d/%d</td><td><button onclick='nextEpisode(%d)'>+1</button></td></tr>",
-			id, name, completada, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, id,
+			"<tr><td>%d</td><td>%s %s</td><td>%d</td><td>%d</td><td><progress value='%d' max='%d'></progress> %d/%d</td><td><button onclick='nextEpisode(%d)'>+1</button></td><td><button onclick='prevEpisode(%d)'>-1</button></td></tr>",
+			id, name, completada, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, id, id,
 		)
 
 	}

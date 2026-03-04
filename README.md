@@ -1,5 +1,5 @@
 Servidor HTTP construido desde cero en Go (sin frameworks) que permite llevar un registro de series de televisión, con persistencia en SQLite.
-¿Como correr el proyecto?
+¿Como correr el proyecto?:
 "go run ."
 
 

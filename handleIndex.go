@@ -26,27 +26,36 @@ func handleIndex( db *sql.DB) string {
 <title>Track de mis series actuales</title>
 <link rel="icon" href="/faviconm.png" type="image/png">
 <style>
-	body { font-family: Arial, sans-serif; padding: 20px; }
-	h1   { color: #333; }
-	table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-	th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-	th { background-color: #f4f4f4; }
+    body { font-family: Arial, sans-serif; padding: 30px; background: #fafafa; }
+    h1 { color: #333; margin-bottom: 16px; }
+    a { color: #555; text-decoration: none; display: inline-block; margin-bottom: 16px; }
+    a:hover { text-decoration: underline; } 
+    table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 8px; overflow: hidden; }
+    th { background: #444; color: white; padding: 12px; text-align: left; }
+    td { padding: 12px; border-bottom: 1px solid #eee; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f5f5f5; }
+    progress { width: 100px; height: 10px; accent-color: #4CAF50; }
+    button { padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-add { background: #4CAF50; color: white; }
+    .btn-sub { background: #e74c3c; color: white; }
+    .btn-del { background: #aaa; color: white; }
 </style>
 </head>
 <body>
-<h1>Track de mis series actuales</h1>
+<h1> Track de mis series actuales</h1>
 <table>
-	<tr>
-    <th>No.</th>
-    <th>Nombre</th>
-    <th>Episodio actual</th>
-    <th>Total de episodios</th>
-    <th>Progreso</th>
-    <th>Agregar episodio</th>
-    <th>Quitar episodio</th>
-	<th>Eliminar serie</th>
-</tr>
-<a href="/create" target="_blank">Agregar Serie</a>
+    <tr>
+        <th>No.</th>
+        <th>Nombre</th>
+        <th>Episodio  actual</th>
+        <th>Total Episodios</th>
+        <th>Progreso</th>
+        <th>agregar episodio</th>
+        <th>Eliminar episodio</th>
+        <th>Eliminar serie</th>
+    </tr>
+<a href="/create" target="_blank">+ Agregar Serie</a>
 
 <script src="/script.js"></script>
 
@@ -74,8 +83,8 @@ func handleIndex( db *sql.DB) string {
 		}
 
 		html += fmt.Sprintf(
-    		"<tr><td>%d</td><td>%s %s</td><td>%d</td><td>%d</td><td><progress value='%d' max='%d'></progress> %d/%d</td><td><button onclick='nextEpisode(%d)'>+1</button></td><td><button onclick='prevEpisode(%d)'>-1</button></td><td><button onclick='deleteSerie(%d)'>Eliminar</button></td></tr>",
-    		id, name, completada, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, id, id, id,
+			"<tr><td>%d</td><td>%s %s</td><td>%d</td><td>%d</td><td><progress value='%d' max='%d'></progress> %d/%d</td><td><button class='btn-add' onclick='nextEpisode(%d)'>+1</button></td><td><button class='btn-sub' onclick='prevEpisode(%d)'>-1</button></td><td><button class='btn-del' onclick='deleteSerie(%d)'>Eliminar</button></td></tr>",
+			id, name, completada, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, id, id, id,
 		)
 
 	}
@@ -85,5 +94,5 @@ func handleIndex( db *sql.DB) string {
 
 		// Enviar respuesta HTTP
 	return fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n%s", html) //se devuelve la respuesta HTTP con el código de estado 200 OK, el encabezado Content-Type indicando que el contenido es HTML, y luego el cuerpo de la respuesta que contiene el HTML construido con la tabla de series.
-	//se hace return de tipo string porque la función handleIndex está definida para devolver un string, que es la respuesta HTTP completa que se enviará al cliente. El formato de la respuesta incluye el código de estado, los encabezados y el cuerpo HTML.
+	//se hace return de tipo string porque la función handleIndex esta definida para devolver un string, que es la respuesta HTTP completa que se enviará al cliente. El formato de la respuesta incluye el código de estado, los encabezados y el cuerpo HTML.
 }

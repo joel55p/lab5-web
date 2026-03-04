@@ -16,6 +16,7 @@ func handleCreate() string {
 	html = `<html>
 <head>
 <title>Agregar Serie</title>
+<link rel="icon" href="/faviconm.png" type="image/png">
 <style>
 	body { font-family: Arial, sans-serif; padding: 20px; }
 	h1   { color: #333; }

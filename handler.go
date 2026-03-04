@@ -84,8 +84,11 @@ func handle(conn net.Conn, db *sql.DB) {
 
 	case method == "GET" && route == "/script.js":
     	response = handleScript()	//para que lea el js 
+		case method == "GET" && route == "/faviconm.png":
+		handleFavicon(conn)
+		return // salir de handle() directamente, no usar conn.Write al final
 	default:
-		response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n<h1>404 Not Found</h1>" //si la solicitud no coincide con ninguna de las rutas definidas, se devuelve una respuesta HTTP con el código de estado 404 Not Found y un mensaje HTML indicando que la página no fue encontrada.
+		response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n<h1>404 Not Found</h1>" //si la solicitud no coincide con ninguna de las rutas definidas, se devuelve una respuesta HTTP con el código de estado 404 Not Found y un mensaje HTML indicando que la página no fue encontrada。
 	}
 
 	conn.Write([]byte(response))  // handle() escribe

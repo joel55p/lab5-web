@@ -24,6 +24,7 @@ func handleIndex( db *sql.DB) string {
 	html = `<html> 
 <head>
 <title>Track de mis series actuales</title>
+<link rel="icon" href="/faviconm.png" type="image/png">
 <style>
 	body { font-family: Arial, sans-serif; padding: 20px; }
 	h1   { color: #333; }
@@ -35,7 +36,13 @@ func handleIndex( db *sql.DB) string {
 <body>
 <h1>Track de mis series actuales</h1>
 <table>
-	<tr><th>No.</th><th>Nombre</th><th>Episodio actual</th><th>Total de episodios</th><th>Agregar a episodio actual</th></tr>
+	<tr>
+	<th>No.</th>
+	<th>Nombre</th>
+	<th>Episodio actual</th>
+	<th>Total de episodios</th>
+	<th>Progreso</th>
+	<th>Agregar a episodio actual</th></tr>
 <a href="/create" target="_blank">Agregar Serie</a>
 
 <script src="/script.js"></script>
@@ -57,11 +64,17 @@ func handleIndex( db *sql.DB) string {
 			continue
 		}
 
-			// Agregar una fila a la tabla por cada serie y se agrega ahora boton
-		html += fmt.Sprintf( //aqui se coloca el boton ya que se necesita el id de cada serie para que el boton funcione, entonces se hace dentro del for para que se agregue un boton por cada serie en la tabla, y cada boton tenga el id de su respectiva serie para que al hacer click en el boton se pueda identificar a qué serie se le debe actualizar el episodio actual.
-			"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td><td><button onclick='nextEpisode(%d)'>+1</button></td></tr>",
-		id, name, currentEpisode, totalEpisodes, id,
+		// Marcar serie como completada si ya se vieron todos los episodios
+		completada := ""
+		if currentEpisode == totalEpisodes {
+			completada = "<span style='color: gold; font-weight: bold;'> <strong>COMPLETADA!!!!</strong></span>"
+		}
+
+		html += fmt.Sprintf(
+			"<tr><td>%d</td><td>%s %s</td><td>%d</td><td>%d</td><td><progress value='%d' max='%d'></progress> %d/%d</td><td><button onclick='nextEpisode(%d)'>+1</button></td></tr>",
+			id, name, completada, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, currentEpisode, totalEpisodes, id,
 		)
+
 	}
 
 	html += `</table></body></html>` //cierre del html
